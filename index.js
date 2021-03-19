@@ -14,8 +14,14 @@ io.on('connection', (socket) => {
         console.log('user disconnected');
       });
 
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg);
+    socket.on('formRegister', (register)=>{
+        console.log('Name of the gamer : ' + register.inputName + '\nPartie join : ' + register.inputChatCode)
+        socket.join(register.inputChatCode);
+        io.to(register.inputChatCode).emit('registerlog', { NamePlayer : register.inputName, ChatCode: register.inputChatCode });
+    });
+
+    socket.on('chat message', (e) => {
+        io.to(e.codeGame).emit('chat message', e.msg);
     });
   });
 
