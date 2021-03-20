@@ -5,32 +5,42 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ploudagame</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
 </head>
 <body>
     <style>
         body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-        #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+        #input { border: none; padding: 1rem 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
         #input:focus { outline: none; }
-        #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
-        #messages { list-style-type: none; margin: 0; padding: 0; }
-        #messages > li { padding: 0.5rem 1rem; }
-        #messages > li:nth-child(odd) { background: #efefef; }
+        #form > button { background: rgb(47, 156, 189); border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+        #messages { list-style-type: none; margin: 0; padding: 0; margin-top: 10vh;}
+        #messages > li { padding: 0.5rem 1rem;}
+        #messages > li > .msg-text { background-color: aqua; border-radius: 2rem; padding: 0.5rem 1rem; font-size: small; margin: 0.3rem 40% 0 0; }
+        #messages > li > .msg-name { font-weight: lighter; font-size: small; margin: 0;}
+        #messages > li > .msg-name-me { font-weight: lighter; font-size: small; margin: 0; float: right; }
+        #messages > li > .msg-text-me { background-color: rgb(152, 172, 172); border-radius: 2rem; padding: 0.5rem 1rem; font-size: small; margin: 1.3rem 0 0 40%;}
+
         .none { display: none;}
         .show { display: block;}
     </style>
-    <div id='registerForm'>
-        <form id="formRegister" action="">
-            <label>Ton nom :</label>
-            <input id="inputName" autocomplete="off" />
-            <br>
-            <label>Code du Chat :</label>
-            <input id="inputChatCode" autocomplete="off" />
-            <button>Envoyer</button>
+    <div id='registerForm' class="position-absolute top-50 start-50 translate-middle">
+        <form id="formRegister" action="" class="mb-3 d-flex justify-content-center flex-column">
+            <label class="form-label" >Ton nom :</label>
+            <input id="inputName" class="form-control" autocomplete="off" />
+            <label class="form-label" >Code du Chat :</label>
+            <input id="inputChatCode" class="form-control" autocomplete="off" />
+            <button class="btn btn-info mt-4" >Entrer</button>
         </form>
     </div>
     <div id='chat' class='none' >
-        <h1 id='titleChat'></h1>
+        <nav class="navbar fixed-top navbar-light bg-light">
+            <div class="container-fluid">
+              <p class="navbar-brand" id='titleChat'></p>
+              <span id='profil' class="navbar-text"></span>
+            </div>
+        </nav>
+        
         <ul id="messages"></ul>
         <form id="form" action="">
             <input id="input" autocomplete="off" /><button>Envoyer</button>
@@ -38,6 +48,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
     <script>
         var socket = io();
         var messages = document.getElementById('messages');
@@ -47,7 +58,7 @@
         var form = document.getElementById('form');
         var input = document.getElementById('input');
 
-        var playerGame
+        var profil = document.getElementById('profil')
 
         formRegister.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -58,27 +69,34 @@
             }
         });
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (input.value) {
-                socket.emit('chat message', { msg: input.value, codeGame: playerGame });
-                input.value = '';
-            }
-        });
-        
         socket.on('registerlog', function(reg) {
             document.getElementById('chat').classList.add('show');
             document.getElementById('registerForm').classList.add('none');
-            document.getElementById('titleChat').innerHTML = reg.ChatCode;
-            playerGame = reg.ChatCode
+            let titleClientChat = 'Chat : ' + reg.ChatCode;
+            document.getElementById('titleChat').innerHTML = titleClientChat;
+            form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat message', { msg: input.value, codeGame: reg.ChatCode });
+                input.value = '';
+            }
+            });
         });
 
-        socket.on('chat message', function(msg) {
-            var item = document.createElement('li');
-            item.textContent = msg;
-            messages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
+        socket.on("connect", () => {
+            // console.log(socket.id); 
         });
+
+        socket.on('chat message', function(data) {
+                var item = document.createElement('li');
+                if (data.id == socket.id){
+                item.innerHTML= '<p class=\'msg-name-me top-0 start-0 \'>' + data.namePlayer + '</p><p class=\'msg-text-me\'>' + data.message + '</p>'
+                }else{
+                    item.innerHTML= '<p class=\'msg-name\'>' + data.namePlayer + '</p><p class=\'msg-text\'>' + data.message + '</p>'
+                }
+                messages.appendChild(item);
+                window.scrollTo(0, document.body.scrollHeight);
+            });
     </script>
 </body>
 </html>

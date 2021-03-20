@@ -9,20 +9,26 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+    let playerName
+    let playerGameCode
     console.log('A user connected');
     socket.on('disconnect', () => {
         console.log('user disconnected');
       });
+    console.log(socket.id);
 
     socket.on('formRegister', (register)=>{
         console.log('Name of the gamer : ' + register.inputName + '\nPartie join : ' + register.inputChatCode)
         socket.join(register.inputChatCode);
         io.to(register.inputChatCode).emit('registerlog', { NamePlayer : register.inputName, ChatCode: register.inputChatCode });
+        playerGameCode = register.inputChatCode
+        playerName = register.inputName
     });
 
     socket.on('chat message', (e) => {
-        io.to(e.codeGame).emit('chat message', e.msg);
+        io.to(e.codeGame).emit('chat message', { message : e.msg, namePlayer: playerName, ChatCode: playerGameCode, id: socket.id });
     });
+
   });
 
 http.listen(PORT, () => {
